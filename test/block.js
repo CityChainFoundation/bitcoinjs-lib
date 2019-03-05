@@ -1,8 +1,14 @@
 const { describe, it, beforeEach } = require('mocha')
 const assert = require('assert')
 const Block = require('../src/block')
+const networks = require('../src/networks')
 
 const fixtures = require('./fixtures/block')
+
+function getNetwork (network) {
+  if (!network) network = 'bitcoin'
+  return networks[network]
+}
 
 describe('Block', function () {
   describe('version', function () {
@@ -27,7 +33,7 @@ describe('Block', function () {
   describe('fromBuffer/fromHex', function () {
     fixtures.valid.forEach(function (f) {
       it('imports ' + f.description, function () {
-        const block = Block.fromHex(f.hex)
+        const block = Block.fromHex(f.hex, getNetwork(f.network))
 
         assert.strictEqual(block.version, f.version)
         assert.strictEqual(block.prevHash.toString('hex'), f.prevHash)
@@ -42,7 +48,7 @@ describe('Block', function () {
     fixtures.invalid.forEach(function (f) {
       it('throws on ' + f.exception, function () {
         assert.throws(function () {
-          Block.fromHex(f.hex)
+          Block.fromHex(f.hex, getNetwork(f.network))
         }, new RegExp(f.exception))
       })
     })
@@ -53,7 +59,7 @@ describe('Block', function () {
       let block
 
       beforeEach(function () {
-        block = Block.fromHex(f.hex)
+        block = Block.fromHex(f.hex, getNetwork(f.network))
       })
 
       it('exports ' + f.description, function () {
@@ -68,7 +74,7 @@ describe('Block', function () {
       let block
 
       beforeEach(function () {
-        block = Block.fromHex(f.hex)
+        block = Block.fromHex(f.hex, getNetwork(f.network))
       })
 
       it('returns ' + f.id + ' for ' + f.description, function () {
@@ -83,7 +89,7 @@ describe('Block', function () {
       let block
 
       beforeEach(function () {
-        block = Block.fromHex(f.hex)
+        block = Block.fromHex(f.hex, getNetwork(f.network))
       })
 
       it('returns UTC date of ' + f.id, function () {
@@ -107,7 +113,7 @@ describe('Block', function () {
       let block
 
       beforeEach(function () {
-        block = Block.fromHex(f.hex)
+        block = Block.fromHex(f.hex, getNetwork(f.network))
       })
 
       it('returns ' + f.merkleRoot + ' for ' + f.id, function () {
@@ -123,7 +129,7 @@ describe('Block', function () {
       let block
 
       beforeEach(function () {
-        block = Block.fromHex(f.hex)
+        block = Block.fromHex(f.hex, getNetwork(f.network))
       })
 
       it('returns ' + f.valid + ' for ' + f.id, function () {
@@ -137,7 +143,7 @@ describe('Block', function () {
       let block
 
       beforeEach(function () {
-        block = Block.fromHex(f.hex)
+        block = Block.fromHex(f.hex, getNetwork(f.network))
       })
 
       it('returns ' + f.valid + ' for ' + f.id, function () {

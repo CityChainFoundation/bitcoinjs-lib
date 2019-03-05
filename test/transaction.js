@@ -3,11 +3,25 @@ const assert = require('assert')
 const bscript = require('../src/script')
 const fixtures = require('./fixtures/transaction')
 const Transaction = require('../src/transaction')
+const networks = require('../src/networks')
+
+function getNetwork (network) {
+  if (!network) network = 'bitcoin'
+  return networks[network]
+}
 
 describe('Transaction', function () {
-  function fromRaw (raw, noWitness) {
-    const tx = new Transaction()
+  function fromRaw (f, noWitness) {
+    var raw = f.raw
+
+    const network = getNetwork(f.network)
+    const tx = new Transaction(network)
     tx.version = raw.version
+
+    if (network.isProofOfStake) {
+      tx.time = raw.time
+    }
+
     tx.locktime = raw.locktime
 
     raw.ins.forEach(function (txIn, i) {
@@ -52,14 +66,17 @@ describe('Transaction', function () {
       const txHex = f.hex || f.txHex
 
       it('imports ' + f.description + ' (' + id + ')', function () {
-        const actual = Transaction.fromHex(txHex)
+        const network = getNetwork(f.network)
+        const actual = Transaction.fromHex(txHex, network)
 
         assert.strictEqual(actual.toHex(), txHex)
       })
 
       if (f.whex) {
         it('imports ' + f.description + ' (' + id + ') as witness', function () {
-          const actual = Transaction.fromHex(f.whex)
+          const network = getNetwork(f.network)
+
+          const actual = Transaction.fromHex(f.whex, network)
 
           assert.strictEqual(actual.toHex(), f.whex)
         })
@@ -73,14 +90,15 @@ describe('Transaction', function () {
     fixtures.invalid.fromBuffer.forEach(function (f) {
       it('throws on ' + f.exception, function () {
         assert.throws(function () {
-          Transaction.fromHex(f.hex)
+          const network = getNetwork(f.network)
+          Transaction.fromHex(f.hex, network)
         }, new RegExp(f.exception))
       })
     })
 
     it('.version should be interpreted as an int32le', function () {
       const txHex = 'ffffffff0000ffffffff'
-      const tx = Transaction.fromHex(txHex)
+      const tx = Transaction.fromHex(txHex, networks.bitcoin)
       assert.equal(-1, tx.version)
       assert.equal(0xffffffff, tx.locktime)
     })
@@ -89,13 +107,13 @@ describe('Transaction', function () {
   describe('toBuffer/toHex', function () {
     fixtures.valid.forEach(function (f) {
       it('exports ' + f.description + ' (' + f.id + ')', function () {
-        const actual = fromRaw(f.raw, true)
+        const actual = fromRaw(f, true)
         assert.strictEqual(actual.toHex(), f.hex)
       })
 
       if (f.whex) {
         it('exports ' + f.description + ' (' + f.id + ') as witness', function () {
-          const wactual = fromRaw(f.raw)
+          const wactual = fromRaw(f)
           assert.strictEqual(wactual.toHex(), f.whex)
         })
       }
@@ -103,7 +121,7 @@ describe('Transaction', function () {
 
     it('accepts target Buffer and offset parameters', function () {
       const f = fixtures.valid[0]
-      const actual = fromRaw(f.raw)
+      const actual = fromRaw(f)
       const byteLength = actual.byteLength()
 
       const target = Buffer.alloc(byteLength * 2)
@@ -123,7 +141,7 @@ describe('Transaction', function () {
   describe('hasWitnesses', function () {
     fixtures.valid.forEach(function (f) {
       it('detects if the transaction has witnesses: ' + (f.whex ? 'true' : 'false'), function () {
-        assert.strictEqual(Transaction.fromHex(f.whex ? f.whex : f.hex).hasWitnesses(), !!f.whex)
+        assert.strictEqual(Transaction.fromHex(f.whex ? f.whex : f.hex, getNetwork(f.network)).hasWitnesses(), !!f.whex)
       })
     })
   })
@@ -131,7 +149,7 @@ describe('Transaction', function () {
   describe('weight/virtualSize', function () {
     it('computes virtual size', function () {
       fixtures.valid.forEach(function (f) {
-        const transaction = Transaction.fromHex(f.whex ? f.whex : f.hex)
+        const transaction = Transaction.fromHex(f.whex ? f.whex : f.hex, getNetwork(f.network))
 
         assert.strictEqual(transaction.virtualSize(), f.virtualSize)
       })
@@ -139,7 +157,7 @@ describe('Transaction', function () {
 
     it('computes weight', function () {
       fixtures.valid.forEach(function (f) {
-        const transaction = Transaction.fromHex(f.whex ? f.whex : f.hex)
+        const transaction = Transaction.fromHex(f.whex ? f.whex : f.hex, getNetwork(f.network))
 
         assert.strictEqual(transaction.weight(), f.weight)
       })
@@ -193,7 +211,7 @@ describe('Transaction', function () {
       let expected
 
       beforeEach(function () {
-        expected = Transaction.fromHex(f.hex)
+        expected = Transaction.fromHex(f.hex, getNetwork(f.network))
         actual = expected.clone()
       })
 
@@ -210,7 +228,7 @@ describe('Transaction', function () {
   describe('getHash/getId', function () {
     function verify (f) {
       it('should return the id for ' + f.id + '(' + f.description + ')', function () {
-        const tx = Transaction.fromHex(f.whex || f.hex)
+        const tx = Transaction.fromHex(f.whex || f.hex, getNetwork(f.network))
 
         assert.strictEqual(tx.getHash().toString('hex'), f.hash)
         assert.strictEqual(tx.getId(), f.id)
@@ -223,7 +241,7 @@ describe('Transaction', function () {
   describe('isCoinbase', function () {
     function verify (f) {
       it('should return ' + f.coinbase + ' for ' + f.id + '(' + f.description + ')', function () {
-        const tx = Transaction.fromHex(f.hex)
+        const tx = Transaction.fromHex(f.hex, getNetwork(f.network))
 
         assert.strictEqual(tx.isCoinbase(), f.coinbase)
       })
@@ -259,7 +277,7 @@ describe('Transaction', function () {
 
     fixtures.hashForSignature.forEach(function (f) {
       it('should return ' + f.hash + ' for ' + (f.description ? ('case "' + f.description + '"') : f.script), function () {
-        const tx = Transaction.fromHex(f.txHex)
+        const tx = Transaction.fromHex(f.txHex, getNetwork(f.network))
         const script = bscript.fromASM(f.script)
 
         assert.strictEqual(tx.hashForSignature(f.inIndex, script, f.type).toString('hex'), f.hash)
@@ -270,7 +288,7 @@ describe('Transaction', function () {
   describe('hashForWitnessV0', function () {
     fixtures.hashForWitnessV0.forEach(function (f) {
       it('should return ' + f.hash + ' for ' + (f.description ? ('case "' + f.description + '"') : ''), function () {
-        const tx = Transaction.fromHex(f.txHex)
+        const tx = Transaction.fromHex(f.txHex, getNetwork(f.network))
         const script = bscript.fromASM(f.script)
 
         assert.strictEqual(tx.hashForWitnessV0(f.inIndex, script, f.value, f.type).toString('hex'), f.hash)

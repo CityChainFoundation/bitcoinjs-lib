@@ -693,6 +693,39 @@
       "coinbase": true,
       "virtualSize": 156,
       "weight": 624
+    },
+    {
+      "description": "PoS-type transaction",
+      "network": "citycoin",
+      "id": "470177baeb5242767ada7a67c93aef9c4e6b22e17c31798db3848a747d9fdbcf",
+      "hash": "cfdb9f7d748a84b38d79317ce1226b4e9cef3ac9677ada7a764252ebba770147",
+      "virtualSize": 230,
+      "weight": 920,
+      "coinbase": false,
+      "raw": {
+        "version": 1,
+        "time": 1547217665,
+        "ins": [
+          {
+            "hash": "9987e0dc49a5927ddfd1dc9c4ab0bc344c57615b0122c0953e0066019f7724b8",
+            "index": 1,
+            "script": "3045022100f33cc9e234c51246b8cabd05e0aaf6af492a0775b060e385a220f6495fb2f346022038f6df4bae4c61d9a79758d3f4ae14736fe583a68826baa80b359c8556fb3d3701 034d627d69792ea8c0b05b90a5b3c96c2fdfa725dca91a992a0496160e4acbc773",
+            "sequence": 4294967295
+          }
+        ],
+        "outs": [
+          {
+            "script": "OP_DUP OP_HASH160 ba2c0f9b933119d714ca78e48bc3b279ac2cd947 OP_EQUALVERIFY OP_CHECKSIG",
+            "value": 199999990000
+          },
+          {
+            "script": "OP_DUP OP_HASH160 3d3233b58a3a3900f5a885780b1c87478ec4dfed OP_EQUALVERIFY OP_CHECKSIG",
+            "value": 800000000000
+          }
+        ],
+        "locktime": 0
+      },
+      "hex": "0100000001ab385c019987e0dc49a5927ddfd1dc9c4ab0bc344c57615b0122c0953e0066019f7724b8010000006b483045022100f33cc9e234c51246b8cabd05e0aaf6af492a0775b060e385a220f6495fb2f346022038f6df4bae4c61d9a79758d3f4ae14736fe583a68826baa80b359c8556fb3d370121034d627d69792ea8c0b05b90a5b3c96c2fdfa725dca91a992a0496160e4acbc773ffffffff02f0a8ed902e0000001976a914ba2c0f9b933119d714ca78e48bc3b279ac2cd94788ac0040b743ba0000001976a9143d3233b58a3a3900f5a885780b1c87478ec4dfed88ac00000000"
     }
   ],
   "hashForSignature": [

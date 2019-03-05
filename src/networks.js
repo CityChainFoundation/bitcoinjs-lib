@@ -34,5 +34,29 @@ module.exports = {
     pubKeyHash: 0x6f,
     scriptHash: 0xc4,
     wif: 0xef
+  },
+  citycoin: {
+    messagePrefix: '\x18CityCoin Signed Message:\n',
+    bip32: {
+      public: 0x0488b21e,
+      private: 0x0488ade4
+    },
+    pubKeyHash: 0x1c,
+    scriptHash: 0x58,
+    wif: 0x08,
+    dustThreshold: 0,
+    isProofOfStake: true
+  },
+  stratis: {
+    messagePrefix: '\x18Stratis Signed Message:\n',
+    bip32: {
+      public: 0x0488b21e,
+      private: 0x0488ade4
+    },
+    pubKeyHash: 0x3f,
+    scriptHash: 0x7D,
+    wif: 0x07,
+    dustThreshold: 0,
+    isProofOfStake: true
   }
 }

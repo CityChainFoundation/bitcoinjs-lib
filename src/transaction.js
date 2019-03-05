@@ -6,6 +6,7 @@ const opcodes = require('bitcoin-ops')
 const typeforce = require('typeforce')
 const types = require('./types')
 const varuint = require('varuint-bitcoin')
+const networks = require('./networks')
 
 function varSliceSize (someScript) {
   const length = someScript.length
@@ -21,8 +22,10 @@ function vectorSize (someVector) {
   }, 0)
 }
 
-function Transaction () {
+function Transaction (network) {
+  this.network = network || networks.bitcoin
   this.version = 1
+  if (this.network.isProofOfStake) this.time = Math.floor(new Date().getTime() / 1000)
   this.locktime = 0
   this.ins = []
   this.outs = []
@@ -46,7 +49,9 @@ const BLANK_OUTPUT = {
   valueBuffer: VALUE_UINT64_MAX
 }
 
-Transaction.fromBuffer = function (buffer, __noStrict) {
+Transaction.fromBuffer = function (buffer, __noStrict, network) {
+  network = network || networks.bitcoin
+
   let offset = 0
   function readSlice (n) {
     offset += n
@@ -88,8 +93,12 @@ Transaction.fromBuffer = function (buffer, __noStrict) {
     return vector
   }
 
-  const tx = new Transaction()
+  const tx = new Transaction(network)
   tx.version = readInt32()
+
+  if (network.isProofOfStake) {
+    tx.time = readUInt32()
+  }
 
   const marker = buffer.readUInt8(offset)
   const flag = buffer.readUInt8(offset + 1)
@@ -126,7 +135,9 @@ Transaction.fromBuffer = function (buffer, __noStrict) {
     }
 
     // was this pointless?
-    if (!tx.hasWitnesses()) throw new Error('Transaction has superfluous witness data')
+    if (!tx.hasWitnesses()) {
+      throw new Error('Transaction has superfluous witness data')
+    }
   }
 
   tx.locktime = readUInt32()
@@ -137,8 +148,8 @@ Transaction.fromBuffer = function (buffer, __noStrict) {
   return tx
 }
 
-Transaction.fromHex = function (hex) {
-  return Transaction.fromBuffer(Buffer.from(hex, 'hex'))
+Transaction.fromHex = function (hex, network) {
+  return Transaction.fromBuffer(Buffer.from(hex, 'hex'), null, network)
 }
 
 Transaction.isCoinbaseHash = function (buffer) {
@@ -210,6 +221,7 @@ Transaction.prototype.__byteLength = function (__allowWitness) {
 
   return (
     (hasWitnesses ? 10 : 8) +
+    (this.network.isProofOfStake ? 4 : 0) +
     varuint.encodingLength(this.ins.length) +
     varuint.encodingLength(this.outs.length) +
     this.ins.reduce(function (sum, input) { return sum + 40 + varSliceSize(input.script) }, 0) +
@@ -219,8 +231,9 @@ Transaction.prototype.__byteLength = function (__allowWitness) {
 }
 
 Transaction.prototype.clone = function () {
-  const newTx = new Transaction()
+  const newTx = new Transaction(this.network)
   newTx.version = this.version
+  if (this.network.isProofOfStake) newTx.time = this.time
   newTx.locktime = this.locktime
 
   newTx.ins = this.ins.map(function (txIn) {
@@ -389,6 +402,7 @@ Transaction.prototype.hashForWitnessV0 = function (inIndex, prevOutScript, value
 
   const input = this.ins[inIndex]
   writeUInt32(this.version)
+  if (this.network.isProofOfStake) writeUInt32(this.time)
   writeSlice(hashPrevouts)
   writeSlice(hashSequence)
   writeSlice(input.hash)
@@ -432,6 +446,12 @@ Transaction.prototype.__toBuffer = function (buffer, initialOffset, __allowWitne
   function writeVector (vector) { writeVarInt(vector.length); vector.forEach(writeVarSlice) }
 
   writeInt32(this.version)
+
+  // If the transaction has the time value, meaning it is an POS-transaction, we'll
+  // write that to the buffer.
+  if (this.time) {
+    writeInt32(this.time)
+  }
 
   const hasWitnesses = __allowWitness && this.hasWitnesses()
 

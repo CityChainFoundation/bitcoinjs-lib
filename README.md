@@ -1,10 +1,10 @@
-# BitcoinJS (bitcoinjs-lib)
+# JavaScript Library for City Chain (city-lib)
 [![Build Status](https://travis-ci.org/bitcoinjs/bitcoinjs-lib.png?branch=master)](https://travis-ci.org/bitcoinjs/bitcoinjs-lib)
 [![NPM](https://img.shields.io/npm/v/bitcoinjs-lib.svg)](https://www.npmjs.org/package/bitcoinjs-lib)
 
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
-A javascript Bitcoin library for node.js and browsers.
+A javascript City Chain library for node.js and browsers, based (fork) on the original Bitcoin JS.
 
 Released under the terms of the [MIT LICENSE](LICENSE).
 
@@ -33,7 +33,7 @@ Presently,  we do not have any formal documentation other than our [examples](#e
 
 ## Installation
 ``` bash
-npm install bitcoinjs-lib
+npm install city-lib
 ```
 
 Typically we support the [Node Maintenance LTS version](https://github.com/nodejs/Release).

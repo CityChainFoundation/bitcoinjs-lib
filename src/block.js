@@ -4,6 +4,8 @@ const fastMerkleRoot = require('merkle-lib/fastRoot')
 const typeforce = require('typeforce')
 const types = require('./types')
 const varuint = require('varuint-bitcoin')
+var bufferutils = require('./bufferutils')
+const networks = require('./networks')
 
 const Transaction = require('./transaction')
 
@@ -16,7 +18,9 @@ function Block () {
   this.nonce = 0
 }
 
-Block.fromBuffer = function (buffer) {
+Block.fromBuffer = function (buffer, network) {
+  network = network || networks.bitcoin
+
   if (buffer.length < 80) throw new Error('Buffer too small (< 80 bytes)')
 
   let offset = 0
@@ -54,7 +58,7 @@ Block.fromBuffer = function (buffer) {
   }
 
   function readTransaction () {
-    const tx = Transaction.fromBuffer(buffer.slice(offset), true)
+    const tx = Transaction.fromBuffer(buffer.slice(offset), true, network)
     offset += tx.byteLength()
     return tx
   }
@@ -65,6 +69,13 @@ Block.fromBuffer = function (buffer) {
   for (var i = 0; i < nTransactions; ++i) {
     const tx = readTransaction()
     block.transactions.push(tx)
+  }
+
+  // Read block signature (vchBlockSig) for PoS coins.
+  block.blockSig = null
+  if (offset < buffer.length) {
+    var blockSigSize = readVarInt()
+    block.blockSig = readSlice(blockSigSize)
   }
 
   return block
@@ -78,8 +89,8 @@ Block.prototype.byteLength = function (headersOnly) {
   }, 0)
 }
 
-Block.fromHex = function (hex) {
-  return Block.fromBuffer(Buffer.from(hex, 'hex'))
+Block.fromHex = function (hex, network) {
+  return Block.fromBuffer(Buffer.from(hex, 'hex'), network)
 }
 
 Block.prototype.getHash = function () {
@@ -133,6 +144,12 @@ Block.prototype.toBuffer = function (headersOnly) {
     tx.toBuffer(buffer, offset)
     offset += txSize
   })
+
+  // Block Signature.
+  if (this.blockSig) {
+    var blockSigLenBuffer = bufferutils.varIntBuffer(this.blockSig.length)
+    return Buffer.concat([buffer, blockSigLenBuffer, this.blockSig])
+  }
 
   return buffer
 }

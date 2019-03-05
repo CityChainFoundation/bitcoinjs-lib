@@ -465,6 +465,12 @@ TransactionBuilder.prototype.setLockTime = function (locktime) {
   this.__tx.locktime = locktime
 }
 
+TransactionBuilder.prototype.setTime = function (time) {
+  typeforce(types.UInt32, time)
+
+  this.__tx.time = time
+}
+
 TransactionBuilder.prototype.setVersion = function (version) {
   typeforce(types.UInt32, version)
 
@@ -473,10 +479,13 @@ TransactionBuilder.prototype.setVersion = function (version) {
 }
 
 TransactionBuilder.fromTransaction = function (transaction, network) {
+  this.network = network || networks.bitcoin
+
   const txb = new TransactionBuilder(network)
 
   // Copy transaction fields
   txb.setVersion(transaction.version)
+  if (this.network.isProofOfStake) txb.setTime(transaction.time)
   txb.setLockTime(transaction.locktime)
 
   // Copy outputs (done first to avoid signature invalidation)

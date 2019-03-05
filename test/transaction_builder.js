@@ -11,8 +11,13 @@ const NETWORKS = require('../src/networks')
 
 const fixtures = require('./fixtures/transaction_builder')
 
+function getNetwork (network) {
+  if (!network) network = 'bitcoin'
+  return NETWORKS[network]
+}
+
 function constructSign (f, txb) {
-  const network = NETWORKS[f.network]
+  const network = getNetwork(f.network)
   const stages = f.stages && f.stages.concat()
 
   f.inputs.forEach(function (input, index) {
@@ -49,10 +54,11 @@ function constructSign (f, txb) {
 }
 
 function construct (f, dontSign) {
-  const network = NETWORKS[f.network]
+  const network = getNetwork(f.network)
   const txb = new TransactionBuilder(network)
 
   if (Number.isFinite(f.version)) txb.setVersion(f.version)
+  if (network.isProofOfStake) txb.setTime(f.time)
   if (f.locktime !== undefined) txb.setLockTime(f.locktime)
 
   f.inputs.forEach(function (input) {
@@ -101,7 +107,7 @@ describe('TransactionBuilder', function () {
   describe('fromTransaction', function () {
     fixtures.valid.build.forEach(function (f) {
       it('returns TransactionBuilder, with ' + f.description, function () {
-        const network = NETWORKS[f.network || 'bitcoin']
+        const network = getNetwork(f.network)
 
         const tx = Transaction.fromHex(f.txHex)
         const txb = TransactionBuilder.fromTransaction(tx, network)
@@ -142,7 +148,7 @@ describe('TransactionBuilder', function () {
     fixtures.valid.fromTransactionSequential.forEach(function (f) {
       it('with ' + f.description, function () {
         const network = NETWORKS[f.network]
-        const tx = Transaction.fromHex(f.txHex)
+        const tx = Transaction.fromHex(f.txHex, network)
         const txb = TransactionBuilder.fromTransaction(tx, network)
 
         tx.ins.forEach(function (input, i) {
@@ -161,8 +167,9 @@ describe('TransactionBuilder', function () {
     })
 
     it('classifies transaction inputs', function () {
-      const tx = Transaction.fromHex(fixtures.valid.classification.hex)
-      const txb = TransactionBuilder.fromTransaction(tx)
+      const network = getNetwork('bitcoin')
+      const tx = Transaction.fromHex(fixtures.valid.classification.hex, network)
+      const txb = TransactionBuilder.fromTransaction(tx, network)
 
       txb.__inputs.forEach(function (i) {
         assert.strictEqual(i.prevOutType, 'scripthash')
@@ -172,10 +179,11 @@ describe('TransactionBuilder', function () {
 
     fixtures.invalid.fromTransaction.forEach(function (f) {
       it('throws ' + f.exception, function () {
-        const tx = Transaction.fromHex(f.txHex)
+        const network = getNetwork(f.network)
+        const tx = Transaction.fromHex(f.txHex, network)
 
         assert.throws(function () {
-          TransactionBuilder.fromTransaction(tx)
+          TransactionBuilder.fromTransaction(tx, network)
         }, new RegExp(f.exception))
       })
     })
@@ -443,7 +451,7 @@ describe('TransactionBuilder', function () {
 
     it('for incomplete P2SH with 0 signatures', function () {
       const inp = Buffer.from('010000000173120703f67318aef51f7251272a6816d3f7523bb25e34b136d80be959391c100000000000ffffffff0100c817a80400000017a91471a8ec07ff69c6c4fee489184c462a9b1b9237488700000000', 'hex') // arbitrary P2SH input
-      const inpTx = Transaction.fromBuffer(inp)
+      const inpTx = Transaction.fromBuffer(inp, null, NETWORKS.testnet)
 
       const txb = new TransactionBuilder(NETWORKS.testnet)
       txb.addInput(inpTx, 0)
@@ -454,7 +462,7 @@ describe('TransactionBuilder', function () {
 
     it('for incomplete P2WPKH with 0 signatures', function () {
       const inp = Buffer.from('010000000173120703f67318aef51f7251272a6816d3f7523bb25e34b136d80be959391c100000000000ffffffff0100c817a8040000001600141a15805e1f4040c9f68ccc887fca2e63547d794b00000000', 'hex')
-      const inpTx = Transaction.fromBuffer(inp)
+      const inpTx = Transaction.fromBuffer(inp, null, NETWORKS.testnet)
 
       const txb = new TransactionBuilder(NETWORKS.testnet)
       txb.addInput(inpTx, 0)
@@ -464,7 +472,8 @@ describe('TransactionBuilder', function () {
     })
 
     it('for incomplete P2WSH with 0 signatures', function () {
-      const inpTx = Transaction.fromBuffer(Buffer.from('010000000173120703f67318aef51f7251272a6816d3f7523bb25e34b136d80be959391c100000000000ffffffff0100c817a80400000022002072df76fcc0b231b94bdf7d8c25d7eef4716597818d211e19ade7813bff7a250200000000', 'hex'))
+      const inp = Buffer.from('010000000173120703f67318aef51f7251272a6816d3f7523bb25e34b136d80be959391c100000000000ffffffff0100c817a80400000022002072df76fcc0b231b94bdf7d8c25d7eef4716597818d211e19ade7813bff7a250200000000', 'hex')
+      const inpTx = Transaction.fromBuffer(inp, null, NETWORKS.testnet)
 
       const txb = new TransactionBuilder(NETWORKS.testnet)
       txb.addInput(inpTx, 0)
@@ -477,7 +486,7 @@ describe('TransactionBuilder', function () {
   describe('multisig', function () {
     fixtures.valid.multisig.forEach(function (f) {
       it(f.description, function () {
-        const network = NETWORKS[f.network]
+        const network = getNetwork(f.network)
         let txb = construct(f, true)
         let tx
 
@@ -569,7 +578,7 @@ describe('TransactionBuilder', function () {
       const redeemScripSig = bscript.fromASM('OP_0 OP_0 3045022100daf0f4f3339d9fbab42b098045c1e4958ee3b308f4ae17be80b63808558d0adb02202f07e3d1f79dc8da285ae0d7f68083d769c11f5621ebd9691d6b48c0d4283d7d01 52410479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b84104c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee51ae168fea63dc339a3c58419466ceaeef7f632653266d0e1236431a950cfe52a4104f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9388f7b0f632de8140fe337e62a37f3566500a99934c2231b6cb9fd7584b8e67253ae')
       const redeemScript = bscript.fromASM('OP_2 0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8 04c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee51ae168fea63dc339a3c58419466ceaeef7f632653266d0e1236431a950cfe52a 04f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9388f7b0f632de8140fe337e62a37f3566500a99934c2231b6cb9fd7584b8e672 OP_3 OP_CHECKMULTISIG')
 
-      const tx = new Transaction()
+      const tx = new Transaction(NETWORKS.testnet)
       tx.addInput(Buffer.from('cff58855426469d0ef16442ee9c644c4fb13832467bcbc3173168a7916f07149', 'hex'), 0, undefined, redeemScripSig)
       tx.addOutput(Buffer.from('76a914aa4d7985c57e011a8b3dd8e0e5a73aaef41629c588ac', 'hex'), 1000)
 

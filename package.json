@@ -1,7 +1,7 @@
 {
-  "name": "bitcoinjs-lib",
-  "version": "4.0.2",
-  "description": "Client-side Bitcoin JavaScript library",
+  "name": "city-lib",
+  "version": "5.0.0",
+  "description": "City Chain JavaScript library",
   "main": "./src/index.js",
   "engines": {
     "node": ">=8.0.0"
@@ -11,7 +11,11 @@
     "bitcoin",
     "browserify",
     "javascript",
-    "bitcoinjs"
+    "bitcoinjs",
+    "city",
+    "citychain",
+    "citycoin",
+    "citylib"
   ],
   "scripts": {
     "coverage-report": "nyc report --reporter=lcov",
@@ -24,7 +28,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitcoinjs/bitcoinjs-lib.git"
+    "url": "https://github.com/CityChainFoundation/city-lib.git"
   },
   "files": [
     "src"

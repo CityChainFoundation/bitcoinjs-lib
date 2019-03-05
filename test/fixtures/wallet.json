@@ -1,0 +1,23 @@
+[
+  {
+      "index": 0,
+      "scriptPubKey": "76a91420f559297c5d393f8abd1391deac5c75d1a73cb788ac",
+      "pubkey": "2103650ed5daa57d50c56b5438aebce40c70489f49ceb80787c1c0a374f6702766a9ac",
+      "address": "CKUA7H4t6ruAZpTf9PQ6pPe5UogJbkHJzT",
+      "hdPath": "m/44'/1926'/0'/0/0"
+  },
+  {
+      "index": 1,
+      "scriptPubKey": "76a914e9be7f8db6289b0f3dd37b365c49a77ddba5faf588ac",
+      "pubkey": "21026ec03e705d69917fa744cbf9ac4664c7fca1918827909866a92851bf35ea29aaac",
+      "address": "CdmpDnhCkNWw9sWHeobydk5qFH1XE1nXAN",
+      "hdPath": "m/44'/1926'/0'/0/1"
+  },
+  {
+      "index": 2,
+      "scriptPubKey": "76a914f9ea2f10128ab9b807dd79a263693c264bda5eaa88ac",
+      "pubkey": "2102899d303c298430507c4ad39d01307bc9bf354f2e7cbeb1109e726d835bb7d0b0ac",
+      "address": "CfFKNBi35GCc97X1uEkU1r8AhjRAwPptcm",
+      "hdPath": "m/44'/1926'/0'/0/2"
+  }
+]
